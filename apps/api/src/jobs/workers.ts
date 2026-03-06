@@ -1,6 +1,18 @@
 import { Worker } from 'bullmq'
-import { redis } from '../lib/redis'
 import { logger } from '../lib/logger'
+
+function getBullMqConnection() {
+  const url = new URL(process.env.REDIS_URL ?? 'redis://localhost:6379')
+  return {
+    host: url.hostname,
+    port: parseInt(url.port || '6379', 10),
+    password: url.password ? decodeURIComponent(url.password) : undefined,
+    tls: url.protocol === 'rediss:' ? {} : undefined,
+    maxRetriesPerRequest: null,
+  }
+}
+
+const connection = getBullMqConnection()
 import { runPlaylistSweep } from './playlist-sweep.job'
 import { runNotificationJob } from './notification.job'
 import { runWatchlistSweep } from './watchlist-sweep.job'

@@ -6,6 +6,7 @@ node_modules/
 dist/
 .next/
 out/
+packages/shared/dist/
 
 # Environment files
 .env

@@ -5,7 +5,7 @@ import { prisma } from '../lib/prisma'
 import { PaginationSchema } from '@spotttrack/shared'
 import type { NotificationDTO } from '@spotttrack/shared'
 
-const router = Router()
+const router: import("express").Router = Router()
 
 router.use(requireAuth)
 

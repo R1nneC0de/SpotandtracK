@@ -6,7 +6,7 @@ import { asyncHandler } from '../lib/async-handler'
 import { requireAuth } from '../middleware/auth.middleware'
 import { logger } from '../lib/logger'
 
-const router = Router()
+const router: import("express").Router = Router()
 
 const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize'
 const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token'

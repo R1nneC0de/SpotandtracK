@@ -2,8 +2,8 @@
   "name": "api",
   "version": "1.0.0",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/index.ts",
-    "build": "tsc",
+    "dev": "pnpm -F shared build && ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc -b",
     "start": "prisma migrate deploy && node dist/index.js",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",

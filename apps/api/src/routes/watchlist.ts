@@ -8,7 +8,7 @@ import {
   getWatchlistEntries,
 } from '../services/watchlist.service'
 
-const router = Router()
+const router: import("express").Router = Router()
 
 router.use(requireAuth)
 

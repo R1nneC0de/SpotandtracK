@@ -10,7 +10,7 @@ import {
   getPlaylistTracks,
 } from '../services/playlist.service'
 
-const router = Router()
+const router: import("express").Router = Router()
 
 router.use(requireAuth)
 
