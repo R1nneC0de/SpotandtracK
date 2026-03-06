@@ -29,7 +29,7 @@ export function startWorkers(): {
       await runPlaylistSweep(job.data.userId as string)
     },
     {
-      connection: redis,
+      connection,
       concurrency: 5,
     }
   )
@@ -55,7 +55,7 @@ export function startWorkers(): {
       await runNotificationJob(job)
     },
     {
-      connection: redis,
+      connection,
       concurrency: 10,
     }
   )
@@ -82,7 +82,7 @@ export function startWorkers(): {
       await runWatchlistSweep()
     },
     {
-      connection: redis,
+      connection,
       concurrency: 10,
     }
   )
