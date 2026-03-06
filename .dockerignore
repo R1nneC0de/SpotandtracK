@@ -1,0 +1,7 @@
+node_modules
+apps/web
+apps/api/dist
+apps/api/.env
+.git
+.next
+*.log
