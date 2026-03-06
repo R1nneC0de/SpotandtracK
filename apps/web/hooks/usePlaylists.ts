@@ -27,12 +27,22 @@ export function useAllPlaylists() {
   })
 }
 
+interface PlaylistDetailResponse {
+  playlist: {
+    id: string
+    spotifyId: string
+    name: string
+    coverImageUrl: string | null
+    isTracked: boolean
+    lastSweptAt: string | null
+    tracks: TrackWithHistory[]
+  }
+}
+
 export function usePlaylistTracks(spotifyId: string) {
   return useQuery({
     queryKey: ['playlists', spotifyId, 'tracks'],
-    queryFn: () => apiFetch<{ playlist: TrackedPlaylistDTO & { tracks: TrackWithHistory[] } }>(
-      `/api/playlists/${spotifyId}/tracks`
-    ),
+    queryFn: () => apiFetch<PlaylistDetailResponse>(`/api/playlists/${spotifyId}/tracks`),
     enabled: !!spotifyId,
     staleTime: 0,
   })
