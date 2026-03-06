@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(cuid())
+  spotifyId        String   @unique
+  email            String   @unique
+  displayName      String
+  accessToken      String
+  refreshToken     String
+  tokenExpiresAt   DateTime
+  market           String   @default("US")
+  monitoringPaused Boolean  @default(false)
+  pauseReason      String?
+  notificationMode String   @default("instant")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  playlists        TrackedPlaylist[]
+  watchlistEntries WatchlistEntry[]
+  notifications    Notification[]
+}
+
+model TrackedPlaylist {
+  id            String    @id @default(cuid())
+  userId        String
+  spotifyId     String
+  name          String
+  coverImageUrl String?
+  isTracked     Boolean   @default(true)
+  lastSweptAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks        TrackedTrack[]
+
+  @@unique([userId, spotifyId])
+}
+
+model TrackedTrack {
+  id                String     @id @default(cuid())
+  playlistId        String
+  spotifyTrackId    String
+  name              String
+  artistName        String
+  albumName         String
+  state             TrackState @default(AVAILABLE)
+  consecutiveMisses Int        @default(0)
+  stateChangedAt    DateTime   @default(now())
+  firstSeenAt       DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  playlist          TrackedPlaylist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  stateHistory      TrackStateHistory[]
+
+  @@unique([playlistId, spotifyTrackId])
+}
+
+model TrackStateHistory {
+  id         String     @id @default(cuid())
+  trackId    String
+  fromState  TrackState
+  toState    TrackState
+  reason     String?
+  detectedAt DateTime   @default(now())
+  track      TrackedTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+}
+
+model WatchlistEntry {
+  id              String    @id @default(cuid())
+  userId          String
+  rawQuery        String
+  artistHint      String?
+  titleHint       String?
+  resolved        Boolean   @default(false)
+  resolvedTrackId String?
+  createdAt       DateTime  @default(now())
+  lastCheckedAt   DateTime?
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  payload   Json
+  sent      Boolean          @default(false)
+  sentAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum TrackState {
+  AVAILABLE
+  UNAVAILABLE
+  REMOVED
+}
+
+enum NotificationType {
+  TRACK_UNAVAILABLE
+  TRACK_REMOVED
+  TRACK_RETURNED
+  WATCHLIST_MATCH
+  MONITORING_PAUSED
+}

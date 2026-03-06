@@ -1,0 +1,15 @@
+{
+  "name": "spotttrack",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev:api": "pnpm --filter api dev",
+    "dev:web": "pnpm --filter web dev",
+    "build": "pnpm -r build",
+    "db:migrate": "pnpm --filter api db:migrate",
+    "db:studio": "pnpm --filter api db:studio"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

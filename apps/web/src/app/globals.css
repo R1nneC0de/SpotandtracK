@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-orbitron: '';
+}
+
+body {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  /* Prevent text I-beam cursor from appearing on non-editable content */
+  cursor: default;
+}
+
+/* Prevent text selection on non-editable elements — gives native app feel */
+body * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Re-enable selection and correct cursor inside actual inputs */
+input, textarea, [contenteditable] {
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+/* Smooth theme transition — animates background and text when dark class toggles */
+html,
+body,
+body * {
+  transition: background-color 350ms ease, border-color 350ms ease, color 250ms ease;
+}
+
+/* Re-enable snappy transitions for interactive elements */
+button,
+a {
+  transition: background-color 150ms ease, border-color 150ms ease,
+    color 150ms ease, opacity 150ms ease !important;
+}
+
+/* Light mode: softer background needs visible card separation */
+html:not(.dark) [class*="border-surface-cardBorder"] {
+  border-color: rgba(100, 0, 100, 0.45);
+}
+
+html:not(.dark) [class*="bg-surface-card"] {
+  background-color: rgba(255, 255, 255, 0.55);
+}
