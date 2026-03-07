@@ -4,7 +4,7 @@ import session from 'express-session'
 import { RedisStore } from 'connect-redis'
 import cors from 'cors'
 import { logger } from './lib/logger'
-import { redis } from './lib/redis'
+import { redis, sessionRedis } from './lib/redis'
 import { errorMiddleware } from './middleware/error.middleware'
 import { startWorkers } from './jobs/workers'
 import { startScheduler, runMasterScheduler } from './jobs/scheduler'
@@ -48,7 +48,7 @@ app.use(express.json())
 const isProd = process.env.NODE_ENV === 'production'
 app.use(
   session({
-    store: new RedisStore({ client: redis }),
+    store: new RedisStore({ client: sessionRedis }),
     secret: process.env.SESSION_SECRET ?? 'dev-secret-change-me',
     resave: false,
     saveUninitialized: false,
