@@ -9,7 +9,6 @@ export function parseRedisUrl() {
   return {
     host: url.hostname,
     port: parseInt(url.port || '6379', 10),
-    username: url.username || undefined,
     password: url.password ? decodeURIComponent(url.password) : undefined,
     tls: useTls ? { rejectUnauthorized: false } : undefined,
     maxRetriesPerRequest: null as null,
