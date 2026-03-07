@@ -25,16 +25,21 @@ const app = express()
 const PORT = parseInt(process.env.PORT ?? '3001', 10)
 
 // Accept requests from both localhost and production frontend
-const ALLOWED_ORIGINS = [
+const ALLOWED_ORIGINS = new Set([
   process.env.WEB_URL ?? 'http://localhost:3000',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-].filter(Boolean)
+  // any extra origins from env (comma-separated)
+  ...(process.env.CORS_ORIGINS ?? '').split(',').map(s => s.trim()).filter(Boolean),
+])
+
+// Accept any Vercel deployment URL for this project
+const VERCEL_ORIGIN_RE = /^https:\/\/spotandtrac-k-web[\w-]*\.vercel\.app$/
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      if (!origin || ALLOWED_ORIGINS.has(origin) || VERCEL_ORIGIN_RE.test(origin)) {
         callback(null, true)
       } else {
         callback(new Error(`CORS: origin ${origin} not allowed`))
