@@ -101,7 +101,7 @@ router.get(
       },
     })
 
-    req.session.userId = user.id
+    req.session!.userId = user.id
     logger.info({ userId: user.id, spotifyId: profile.id }, 'User logged in')
     res.redirect(`${webUrl}/dashboard`)
   })
@@ -121,7 +121,7 @@ router.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     const user = await prisma.user.findUniqueOrThrow({
-      where: { id: req.session.userId },
+      where: { id: req.session!.userId },
       select: {
         id: true,
         spotifyId: true,
@@ -154,12 +154,12 @@ router.patch(
     const { notificationMode } = result.data
 
     const updated = await prisma.user.update({
-      where: { id: req.session.userId },
+      where: { id: req.session!.userId },
       data: { notificationMode },
       select: { notificationMode: true },
     })
 
-    logger.info({ userId: req.session.userId, notificationMode }, 'User updated notification mode')
+    logger.info({ userId: req.session!.userId, notificationMode }, 'User updated notification mode')
     res.json({ notificationMode: updated.notificationMode })
   })
 )

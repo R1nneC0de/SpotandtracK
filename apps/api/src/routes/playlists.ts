@@ -18,7 +18,7 @@ router.use(requireAuth)
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    const playlists = await getUserPlaylists(req.session.userId!)
+    const playlists = await getUserPlaylists(req.session!.userId)
     res.json({ playlists })
   })
 )
@@ -27,7 +27,7 @@ router.get(
 router.get(
   '/tracked',
   asyncHandler(async (req, res) => {
-    const playlists = await getTrackedPlaylists(req.session.userId!)
+    const playlists = await getTrackedPlaylists(req.session!.userId)
     res.json({ playlists })
   })
 )
@@ -37,7 +37,7 @@ router.get(
   '/:spotifyId/tracks',
   asyncHandler(async (req, res) => {
     const { spotifyId } = req.params
-    const playlist = await getPlaylistTracks(req.session.userId!, spotifyId)
+    const playlist = await getPlaylistTracks(req.session!.userId, spotifyId)
     if (!playlist) {
       res.status(404).json({ error: 'Playlist not found or not tracked' })
       return
@@ -54,7 +54,7 @@ router.post(
       .object({ spotifyId: z.string().min(1) })
       .parse(req.params)
 
-    const playlist = await trackPlaylist(req.session.userId!, spotifyId)
+    const playlist = await trackPlaylist(req.session!.userId, spotifyId)
     res.status(201).json({ playlist })
   })
 )
@@ -67,7 +67,7 @@ router.delete(
       .object({ spotifyId: z.string().min(1) })
       .parse(req.params)
 
-    const playlist = await untrackPlaylist(req.session.userId!, spotifyId)
+    const playlist = await untrackPlaylist(req.session!.userId, spotifyId)
     if (!playlist) {
       res.status(404).json({ error: 'Playlist not tracked' })
       return

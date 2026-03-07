@@ -24,7 +24,7 @@ router.get(
     }
 
     const { page, limit } = parseResult.data
-    const userId = req.session.userId!
+    const userId = req.session!.userId
     const skip = (page - 1) * limit
 
     // Run count and data fetch in parallel — both use the same filter, no join needed

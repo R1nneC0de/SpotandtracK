@@ -77,7 +77,7 @@ if (process.env.NODE_ENV !== 'production') {
     '/api/debug/sweep',
     requireAuth,
     asyncHandler(async (req, res) => {
-      await runPlaylistSweep(req.session.userId!)
+      await runPlaylistSweep(req.session!.userId)
       res.json({ ok: true, message: 'Sweep completed synchronously' })
     })
   )
@@ -88,7 +88,7 @@ if (process.env.NODE_ENV !== 'production') {
     requireAuth,
     asyncHandler(async (req, res) => {
       const job = await playlistSweepQueue.add('sweep-user', {
-        userId: req.session.userId!,
+        userId: req.session!.userId,
       })
       res.json({ ok: true, jobId: job.id })
     })
@@ -111,7 +111,7 @@ if (process.env.NODE_ENV !== 'production') {
     '/api/debug/tracks/:playlistId',
     requireAuth,
     asyncHandler(async (req, res) => {
-      const userId = req.session.userId!
+      const userId = req.session!.userId
       const { playlistId } = req.params
 
       const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } })
@@ -142,7 +142,7 @@ if (process.env.NODE_ENV !== 'production') {
     '/api/debug/token',
     requireAuth,
     asyncHandler(async (req, res) => {
-      const userId = req.session.userId!
+      const userId = req.session!.userId
       const client = await spotifyClient(userId)
       const meRes = await client.get('/me')
       const meBody = await meRes.json().catch(() => null)

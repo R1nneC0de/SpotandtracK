@@ -19,7 +19,7 @@ router.use(requireAuth)
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    const userId = req.session.userId!
+    const userId = req.session!.userId
     const entries = await getWatchlistEntries(userId)
     res.json({ entries })
   })
@@ -39,7 +39,7 @@ router.post(
       return
     }
 
-    const userId = req.session.userId!
+    const userId = req.session!.userId
     const entry = await addWatchlistEntry(userId, parse.data)
     res.status(201).json({ entry })
   })
@@ -53,7 +53,7 @@ router.post(
 router.delete(
   '/:id',
   asyncHandler(async (req, res) => {
-    const userId = req.session.userId!
+    const userId = req.session!.userId
     const { id } = req.params
 
     const deleted = await removeWatchlistEntry(userId, id)
