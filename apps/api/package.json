@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "pnpm -F shared build && ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc -b",
+    "build": "tsc",
     "start": "prisma migrate deploy && node dist/index.js",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
