@@ -103,17 +103,7 @@ router.get(
 
     req.session.userId = user.id
     logger.info({ userId: user.id, spotifyId: profile.id }, 'User logged in')
-
-    // Explicitly save session before redirect — prevents race condition where
-    // the redirect fires before the MemoryStore write completes
-    req.session.save((err) => {
-      if (err) {
-        logger.error({ err }, 'Session save error')
-        res.redirect(`${webUrl}/?error=session_error`)
-        return
-      }
-      res.redirect(`${webUrl}/dashboard`)
-    })
+    res.redirect(`${webUrl}/dashboard`)
   })
 )
 
@@ -121,10 +111,7 @@ router.post(
   '/logout',
   requireAuth,
   asyncHandler(async (req, res) => {
-    const userId = req.session.userId
-    req.session.destroy((err) => {
-      if (err) logger.error({ err, userId }, 'Session destroy error')
-    })
+    req.session = null
     res.json({ ok: true })
   })
 )

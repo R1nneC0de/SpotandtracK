@@ -1,8 +1,12 @@
 import { Request, Response, NextFunction } from 'express'
 
-declare module 'express-session' {
-  interface SessionData {
-    userId: string
+// Augment cookie-session's session object with our userId field
+declare module 'express' {
+  interface Request {
+    session: {
+      userId?: string
+      [key: string]: unknown
+    } | null
   }
 }
 

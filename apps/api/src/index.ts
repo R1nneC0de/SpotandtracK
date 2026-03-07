@@ -1,10 +1,9 @@
 import 'dotenv/config'
 import express from 'express'
-import session from 'express-session'
-import { RedisStore } from 'connect-redis'
+import cookieSession from 'cookie-session'
 import cors from 'cors'
 import { logger } from './lib/logger'
-import { redis, sessionRedis } from './lib/redis'
+import { redis } from './lib/redis'
 import { errorMiddleware } from './middleware/error.middleware'
 import { startWorkers } from './jobs/workers'
 import { startScheduler, runMasterScheduler } from './jobs/scheduler'
@@ -46,18 +45,17 @@ app.use(
 )
 app.use(express.json())
 const isProd = process.env.NODE_ENV === 'production'
+
+// cookie-session stores the session IN the signed cookie — no Redis required.
+// This eliminates the Redis connection dependency for auth entirely.
 app.use(
-  session({
-    store: new RedisStore({ client: sessionRedis }),
+  cookieSession({
+    name: 'session',
     secret: process.env.SESSION_SECRET ?? 'dev-secret-change-me',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: isProd,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: isProd ? 'none' : 'lax',
-    },
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   })
 )
 
