@@ -1,65 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
-import https from 'node:https'
-import http from 'node:http'
+import { cookies } from 'next/headers'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+const COOKIE_NAME = 'st-session'
+const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 // 7 days in seconds
 
 /**
- * Dedicated API route for the session exchange.
- * Uses Node.js http module (not fetch) to get rawHeaders — this guarantees
- * Set-Cookie headers are preserved individually. The Fetch API's Headers
- * object may merge or drop Set-Cookie in some runtimes.
- *
- * This route takes precedence over the [...path] catch-all for /api/auth/session.
+ * Exchange a one-time auth token for a session.
+ * Calls the backend to verify the token and get a long-lived session token.
+ * Stores the session token in an httpOnly cookie on the Vercel domain.
+ * No Set-Cookie forwarding needed — we own the cookie entirely.
  */
 export async function POST(req: NextRequest) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
-  const body = await req.text()
-  const target = new URL(`${apiUrl}/api/auth/session`)
-  const client = target.protocol === 'https:' ? https : http
+  const body = await req.json()
 
-  return new Promise<NextResponse>((resolve) => {
-    const proxyReq = client.request(
-      {
-        hostname: target.hostname,
-        port: target.port || (target.protocol === 'https:' ? 443 : 80),
-        path: target.pathname,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(body),
-        },
-      },
-      (proxyRes) => {
-        let data = ''
-        proxyRes.on('data', (chunk: Buffer) => (data += chunk.toString()))
-        proxyRes.on('end', () => {
-          const response = new NextResponse(data, {
-            status: proxyRes.statusCode ?? 500,
-            headers: { 'Content-Type': 'application/json' },
-          })
-
-          // rawHeaders preserves each Set-Cookie individually: ['Set-Cookie', 'val1', 'Set-Cookie', 'val2']
-          const raw = proxyRes.rawHeaders
-          for (let i = 0; i < raw.length; i += 2) {
-            if (raw[i].toLowerCase() === 'set-cookie') {
-              response.headers.append('Set-Cookie', raw[i + 1])
-            }
-          }
-
-          resolve(response)
-        })
-      }
-    )
-
-    proxyReq.on('error', (err) => {
-      resolve(
-        NextResponse.json(
-          { error: 'Proxy error', detail: err.message },
-          { status: 502 }
-        )
-      )
-    })
-
-    proxyReq.write(body)
-    proxyReq.end()
+  const backendRes = await fetch(`${API_URL}/api/auth/session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   })
+
+  if (!backendRes.ok) {
+    const err = await backendRes.text()
+    return new NextResponse(err, { status: backendRes.status })
+  }
+
+  const data = (await backendRes.json()) as { ok: boolean; sessionToken: string }
+
+  // Set the session token as an httpOnly cookie on the Vercel domain
+  const cookieStore = await cookies()
+  cookieStore.set(COOKIE_NAME, data.sessionToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: COOKIE_MAX_AGE,
+  })
+
+  return NextResponse.json({ ok: true })
 }

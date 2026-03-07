@@ -1,21 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 
 /**
- * Catch-all API proxy that replaces Next.js rewrites for /api/* routes.
- * Runs as a Vercel serverless function so we can explicitly forward
- * Cookie and Set-Cookie headers — Vercel's rewrite proxy silently strips them.
+ * Catch-all API proxy for /api/* routes.
+ * Reads the session token from our httpOnly cookie (set by /api/auth/session)
+ * and forwards it as an Authorization: Bearer header to the backend.
+ * No cookie forwarding needed — the backend accepts the Bearer token directly.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+const COOKIE_NAME = 'st-session'
 
 async function proxyRequest(req: NextRequest): Promise<NextResponse> {
   const url = new URL(req.url)
   const backendUrl = `${API_URL}${url.pathname}${url.search}`
 
   const headers: Record<string, string> = {}
-  // Forward essential request headers
-  const cookie = req.headers.get('cookie')
-  if (cookie) headers['Cookie'] = cookie
+
+  // Read our session cookie and convert to Authorization header
+  const cookieStore = await cookies()
+  const sessionToken = cookieStore.get(COOKIE_NAME)?.value
+  if (sessionToken) {
+    headers['Authorization'] = `Bearer ${sessionToken}`
+  }
+
+  // Forward content-type for POST/PUT/PATCH
   const contentType = req.headers.get('content-type')
   if (contentType) headers['Content-Type'] = contentType
 
@@ -23,34 +32,21 @@ async function proxyRequest(req: NextRequest): Promise<NextResponse> {
     method: req.method,
     headers,
     body: req.method !== 'GET' && req.method !== 'HEAD' ? await req.text() : undefined,
-    redirect: 'manual', // Don't follow redirects — pass them through
+    redirect: 'manual',
   })
 
-  // For redirects, forward them directly to the browser
+  // For redirects, forward them to the browser
   if (backendRes.status >= 300 && backendRes.status < 400) {
     const location = backendRes.headers.get('location') ?? '/'
-    const response = NextResponse.redirect(location, backendRes.status)
-    // Forward Set-Cookie even on redirects
-    for (const cookie of backendRes.headers.getSetCookie()) {
-      response.headers.append('Set-Cookie', cookie)
-    }
-    return response
+    return NextResponse.redirect(location, backendRes.status)
   }
 
   const data = await backendRes.arrayBuffer()
-  const response = new NextResponse(data, {
-    status: backendRes.status,
-  })
+  const response = new NextResponse(data, { status: backendRes.status })
 
-  // Forward content-type
   const resContentType = backendRes.headers.get('content-type')
   if (resContentType) {
     response.headers.set('Content-Type', resContentType)
-  }
-
-  // Forward Set-Cookie headers from backend
-  for (const cookie of backendRes.headers.getSetCookie()) {
-    response.headers.append('Set-Cookie', cookie)
   }
 
   return response

@@ -14,19 +14,20 @@ const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token'
 const SPOTIFY_SCOPES =
   'playlist-read-private playlist-read-collaborative user-read-email'
 
-// Short-lived signed token for the OAuth callback → frontend handoff.
-// Avoids relying on Set-Cookie through Vercel's rewrite proxy (which drops it on 302s).
-const AUTH_TOKEN_TTL_MS = 60_000 // 60 seconds
+// Signed token utilities used for both the OAuth handoff (short-lived)
+// and the session token (long-lived).
+const AUTH_TOKEN_TTL_MS = 60_000 // 60s — one-time OAuth handoff
+const SESSION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days — session
 
-function signAuthToken(userId: string): string {
+function signToken(userId: string, ttlMs: number): string {
   const secret = process.env.SESSION_SECRET ?? 'dev-secret-change-me'
-  const payload = JSON.stringify({ userId, exp: Date.now() + AUTH_TOKEN_TTL_MS })
+  const payload = JSON.stringify({ userId, exp: Date.now() + ttlMs })
   const encoded = Buffer.from(payload).toString('base64url')
   const sig = crypto.createHmac('sha256', secret).update(encoded).digest('base64url')
   return `${encoded}.${sig}`
 }
 
-function verifyAuthToken(token: string): string | null {
+export function verifyToken(token: string): string | null {
   const secret = process.env.SESSION_SECRET ?? 'dev-secret-change-me'
   const [encoded, sig] = token.split('.')
   if (!encoded || !sig) return null
@@ -134,7 +135,7 @@ router.get(
 
     // Don't set the cookie here — Vercel's rewrite proxy drops Set-Cookie on 302 responses.
     // Instead, pass a signed one-time token to the frontend, which exchanges it via fetch.
-    const authToken = signAuthToken(user.id)
+    const authToken = signToken(user.id, AUTH_TOKEN_TTL_MS)
     logger.info({ userId: user.id, spotifyId: profile.id }, 'User logged in')
     res.redirect(`${webUrl}/auth/callback?token=${authToken}`)
   })
@@ -169,8 +170,10 @@ router.get(
   })
 )
 
-// Exchange a signed one-time auth token for a session cookie.
-// Called by the frontend /auth/callback page via fetch (through the Vercel rewrite proxy).
+// Exchange a short-lived one-time auth token for a long-lived session token.
+// Returns the session token in the response body — the Next.js API route
+// stores it in an httpOnly cookie on the Vercel domain.
+// This avoids any Set-Cookie forwarding through Vercel's proxy.
 router.post(
   '/session',
   asyncHandler(async (req, res) => {
@@ -180,14 +183,14 @@ router.post(
       return
     }
 
-    const userId = verifyAuthToken(token)
+    const userId = verifyToken(token)
     if (!userId) {
       res.status(401).json({ error: 'Invalid or expired token' })
       return
     }
 
-    req.session!.userId = userId
-    res.json({ ok: true })
+    const sessionToken = signToken(userId, SESSION_TOKEN_TTL_MS)
+    res.json({ ok: true, sessionToken })
   })
 )
 
