@@ -34,6 +34,10 @@ export function startWorkers(): {
     }
   )
 
+  playlistWorker.on('error', (err) => {
+    logger.error({ err }, 'Playlist sweep worker error')
+  })
+
   playlistWorker.on('completed', (job) => {
     logger.info({ jobId: job.id, userId: job.data.userId }, 'Playlist sweep job completed')
   })
@@ -59,6 +63,10 @@ export function startWorkers(): {
       concurrency: 10,
     }
   )
+
+  notificationWorker.on('error', (err) => {
+    logger.error({ err }, 'Notification worker error')
+  })
 
   notificationWorker.on('completed', (job) => {
     logger.info({ jobId: job.id, notificationId: job.data.notificationId }, 'Notification job completed')
@@ -86,6 +94,10 @@ export function startWorkers(): {
       concurrency: 10,
     }
   )
+
+  watchlistWorker.on('error', (err) => {
+    logger.error({ err }, 'Watchlist sweep worker error')
+  })
 
   watchlistWorker.on('completed', (job) => {
     logger.info({ jobId: job.id }, 'Watchlist sweep job completed')

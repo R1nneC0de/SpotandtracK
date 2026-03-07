@@ -10,6 +10,7 @@ import { startWorkers } from './jobs/workers'
 import { startScheduler, runMasterScheduler } from './jobs/scheduler'
 import { playlistSweepQueue } from './jobs/queues'
 import { requireAuth } from './middleware/auth.middleware'
+// playlistSweepQueue kept for debug routes below
 import { asyncHandler } from './lib/async-handler'
 import { runPlaylistSweep } from './jobs/playlist-sweep.job'
 import { runWatchlistSweep } from './jobs/watchlist-sweep.job'
@@ -61,19 +62,10 @@ app.use(
 )
 
 // ── Core routes ────────────────────────────────────────────────────────────────
-app.get('/api/health', asyncHandler(async (_req, res) => {
-  const [sweepWaiting, sweepActive] = await Promise.all([
-    playlistSweepQueue.getWaitingCount(),
-    playlistSweepQueue.getActiveCount(),
-  ])
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    queues: {
-      'playlist-sweep': { waiting: sweepWaiting, active: sweepActive },
-    },
-  })
-}))
+// Simple health check — no Redis dependency so Render/UptimeRobot never gets a 502
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
 
 app.use('/api/auth', authRouter)
 app.use('/api/playlists', playlistsRouter)
@@ -171,6 +163,10 @@ app.use(errorMiddleware)
 // ── Start server ───────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   logger.info({ port: PORT }, 'SpottracK API server started')
-  startWorkers()
-  startScheduler()
+  try {
+    startWorkers()
+    startScheduler()
+  } catch (err) {
+    logger.error({ err }, 'Failed to start workers/scheduler — server still running')
+  }
 })
