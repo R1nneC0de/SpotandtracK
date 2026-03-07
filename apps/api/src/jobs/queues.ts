@@ -11,6 +11,7 @@ function getBullMqConnection() {
     password: url.password ? decodeURIComponent(url.password) : undefined,
     tls: url.protocol === 'rediss:' ? {} : undefined,
     maxRetriesPerRequest: null,
+    keepAlive: 10000,
   }
 }
 

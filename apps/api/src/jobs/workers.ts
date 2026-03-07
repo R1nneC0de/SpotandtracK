@@ -9,6 +9,7 @@ function getBullMqConnection() {
     password: url.password ? decodeURIComponent(url.password) : undefined,
     tls: url.protocol === 'rediss:' ? {} : undefined,
     maxRetriesPerRequest: null,
+    keepAlive: 10000,
   }
 }
 
@@ -30,7 +31,7 @@ export function startWorkers(): {
     },
     {
       connection,
-      concurrency: 5,
+      concurrency: 2,
     }
   )
 
@@ -60,7 +61,7 @@ export function startWorkers(): {
     },
     {
       connection,
-      concurrency: 10,
+      concurrency: 2,
     }
   )
 
@@ -91,7 +92,7 @@ export function startWorkers(): {
     },
     {
       connection,
-      concurrency: 10,
+      concurrency: 2,
     }
   )
 
