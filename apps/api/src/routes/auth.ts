@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import crypto from 'node:crypto'
 import { prisma } from '../lib/prisma'
 import { encrypt } from '../lib/crypto'
 import { asyncHandler } from '../lib/async-handler'
@@ -12,6 +13,36 @@ const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize'
 const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token'
 const SPOTIFY_SCOPES =
   'playlist-read-private playlist-read-collaborative user-read-email'
+
+// Short-lived signed token for the OAuth callback → frontend handoff.
+// Avoids relying on Set-Cookie through Vercel's rewrite proxy (which drops it on 302s).
+const AUTH_TOKEN_TTL_MS = 60_000 // 60 seconds
+
+function signAuthToken(userId: string): string {
+  const secret = process.env.SESSION_SECRET ?? 'dev-secret-change-me'
+  const payload = JSON.stringify({ userId, exp: Date.now() + AUTH_TOKEN_TTL_MS })
+  const encoded = Buffer.from(payload).toString('base64url')
+  const sig = crypto.createHmac('sha256', secret).update(encoded).digest('base64url')
+  return `${encoded}.${sig}`
+}
+
+function verifyAuthToken(token: string): string | null {
+  const secret = process.env.SESSION_SECRET ?? 'dev-secret-change-me'
+  const [encoded, sig] = token.split('.')
+  if (!encoded || !sig) return null
+  const expectedSig = crypto.createHmac('sha256', secret).update(encoded).digest('base64url')
+  if (sig !== expectedSig) return null
+  try {
+    const { userId, exp } = JSON.parse(Buffer.from(encoded, 'base64url').toString()) as {
+      userId: string
+      exp: number
+    }
+    if (Date.now() > exp) return null
+    return userId
+  } catch {
+    return null
+  }
+}
 
 router.get('/spotify', (_req, res) => {
   const params = new URLSearchParams({
@@ -101,9 +132,11 @@ router.get(
       },
     })
 
-    req.session!.userId = user.id
+    // Don't set the cookie here — Vercel's rewrite proxy drops Set-Cookie on 302 responses.
+    // Instead, pass a signed one-time token to the frontend, which exchanges it via fetch.
+    const authToken = signAuthToken(user.id)
     logger.info({ userId: user.id, spotifyId: profile.id }, 'User logged in')
-    res.redirect(`${webUrl}/dashboard`)
+    res.redirect(`${webUrl}/auth/callback?token=${authToken}`)
   })
 )
 
@@ -133,6 +166,28 @@ router.get(
       },
     })
     res.json(user)
+  })
+)
+
+// Exchange a signed one-time auth token for a session cookie.
+// Called by the frontend /auth/callback page via fetch (through the Vercel rewrite proxy).
+router.post(
+  '/session',
+  asyncHandler(async (req, res) => {
+    const { token } = req.body as { token?: string }
+    if (!token) {
+      res.status(400).json({ error: 'Missing token' })
+      return
+    }
+
+    const userId = verifyAuthToken(token)
+    if (!userId) {
+      res.status(401).json({ error: 'Invalid or expired token' })
+      return
+    }
+
+    req.session!.userId = userId
+    res.json({ ok: true })
   })
 )
 
