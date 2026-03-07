@@ -59,7 +59,7 @@ app.use(
     secret: process.env.SESSION_SECRET ?? 'dev-secret-change-me',
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
+    sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   })
 )

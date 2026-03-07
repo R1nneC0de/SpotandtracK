@@ -1,8 +1,6 @@
 import { SpotifyLogo } from '../../components/ui/SpotifyLogo'
 
 export default function LoginPage() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-brand-magenta dark:bg-surface-dark">
       <div className="flex flex-col items-center gap-8 max-w-sm w-full">
@@ -24,7 +22,7 @@ export default function LoginPage() {
 
         {/* Connect button */}
         <a
-          href={`${apiUrl}/api/auth/spotify`}
+          href="/api/auth/spotify"
           className="flex items-center gap-3 bg-brand-green text-black font-bold rounded-full px-8 py-3 transition-colors duration-150 hover:opacity-90"
         >
           <SpotifyLogo size={20} className="text-black" />

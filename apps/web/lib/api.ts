@@ -1,8 +1,7 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
-
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    credentials: 'include',
+  // Use relative URLs — Next.js rewrites proxy /api/* to the backend.
+  // This keeps cookies first-party (same domain) and avoids third-party cookie blocking.
+  const res = await fetch(path, {
     headers: {
       'Content-Type': 'application/json',
       ...options?.headers,

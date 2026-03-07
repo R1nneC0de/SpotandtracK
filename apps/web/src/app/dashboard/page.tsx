@@ -16,9 +16,6 @@ import { WatchlistSection } from '../../../components/dashboard/WatchlistSection
 import { useUser } from '../../../hooks/useUser'
 import { useTrackedPlaylists } from '../../../hooks/usePlaylists'
 
-// Fallback so the reconnect link works even without the env var in local dev
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
-
 export default function DashboardPage() {
   const router = useRouter()
   const { data: user, isLoading: userLoading, isError: userError } = useUser()
@@ -59,7 +56,7 @@ export default function DashboardPage() {
 
             {/* Right: OAuth reconnect link — triggers the same flow as the login page */}
             <a
-              href={`${API_URL}/api/auth/spotify`}
+              href="/api/auth/spotify"
               className="font-mono text-sm font-bold text-brand-green underline shrink-0"
             >
               Reconnect

@@ -1,22 +1,8 @@
 import { Queue } from 'bullmq'
 import { JOB_ATTEMPTS, JOB_BACKOFF_MS } from '@spotttrack/shared'
+import { parseRedisUrl } from '../lib/redis'
 
-// Parse the Redis URL into plain connection options so BullMQ manages its own
-// ioredis instance — avoids the version mismatch error when sharing instances.
-function getBullMqConnection() {
-  const url = new URL(process.env.REDIS_URL ?? 'redis://localhost:6379')
-  return {
-    host: url.hostname,
-    port: parseInt(url.port || '6379', 10),
-    password: url.password ? decodeURIComponent(url.password) : undefined,
-    tls: url.protocol === 'rediss:' ? {} : undefined,
-    maxRetriesPerRequest: null,
-    enableReadyCheck: false,
-    keepAlive: 10000,
-  }
-}
-
-const connection = getBullMqConnection()
+const connection = parseRedisUrl()
 
 const defaultJobOptions = {
   attempts: JOB_ATTEMPTS,
