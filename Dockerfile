@@ -18,6 +18,9 @@ COPY tsconfig.base.json ./
 COPY packages/shared/ ./packages/shared/
 COPY apps/api/ ./apps/api/
 
+# Build shared package first (api depends on @spotttrack/shared types)
+RUN pnpm --filter "@spotttrack/shared" build
+
 # Build the API
 RUN pnpm --filter api build
 
