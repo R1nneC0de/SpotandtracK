@@ -2,11 +2,11 @@
 node_modules/
 .pnpm-store/
 
-# Build outputs
-dist/
+# Build outputs (packages/shared/dist is intentionally committed — Render needs it pre-built)
+apps/api/dist/
+apps/web/dist/
+apps/web/out/
 .next/
-out/
-packages/shared/dist/
 
 # Environment files
 .env
@@ -25,6 +25,9 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# TypeScript incremental build cache
+*.tsbuildinfo
 
 # pnpm
 pnpm-debug.log*

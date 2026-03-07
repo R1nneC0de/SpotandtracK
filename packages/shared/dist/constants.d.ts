@@ -1,0 +1,12 @@
+export declare const PLAYLIST_SWEEP_INTERVAL_HOURS = 12;
+export declare const WATCHLIST_SWEEP_INTERVAL_HOURS = 24;
+export declare const TOKEN_REFRESH_BUFFER_MINUTES = 5;
+export declare const SPOTIFY_TRACK_PAGE_SIZE = 100;
+export declare const SPOTIFY_PLAYLIST_PAGE_SIZE = 50;
+export declare const WATCHLIST_BATCH_SIZE = 50;
+export declare const FUSE_MATCH_THRESHOLD = 0.15;
+export declare const SWEEP_API_DELAY_MS = 200;
+export declare const JOB_ATTEMPTS = 3;
+export declare const JOB_BACKOFF_MS = 5000;
+export declare const CONSECUTIVE_MISS_THRESHOLD = 2;
+//# sourceMappingURL=constants.d.ts.map
