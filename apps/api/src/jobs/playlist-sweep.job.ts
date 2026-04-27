@@ -101,21 +101,28 @@ async function sweepPlaylist(
         }
       }
     } else {
-      // Not found in Spotify response — could be a transient catalog hiccup
+      // Not found in Spotify response — user most likely removed this track from their playlist.
+      // Buffer one sweep in case of a transient Spotify API hiccup, then delete quietly.
+      // We do NOT fire TRACK_REMOVED here: that state conflates user removals with catalog
+      // removals, causing false-positive notifications whenever a user curates their playlist.
       const newMisses = track.consecutiveMisses + 1
 
-      await prisma.trackedTrack.update({
-        where: { id: track.id },
-        data: { consecutiveMisses: newMisses },
-      })
-
-      if (newMisses >= CONSECUTIVE_MISS_THRESHOLD && track.state !== 'REMOVED') {
-        // Two consecutive misses confirms the track is gone, not a Spotify indexing blip
-        await transitionState(track, 'REMOVED', 'fully_removed', userId, playlist.name)
+      if (newMisses >= CONSECUTIVE_MISS_THRESHOLD) {
+        // Confirmed absent for 2+ sweeps — treat as user-removed and stop tracking it.
+        // Cascades to TrackStateHistory via onDelete: Cascade in schema.
+        await prisma.trackedTrack.delete({ where: { id: track.id } })
+        logger.info(
+          { trackId: track.id, name: track.name, playlistId: playlist.id },
+          'Track no longer in playlist — removed from tracking'
+        )
       } else {
+        await prisma.trackedTrack.update({
+          where: { id: track.id },
+          data: { consecutiveMisses: newMisses },
+        })
         logger.info(
           { trackId: track.id, name: track.name, misses: newMisses },
-          'Track miss — not yet REMOVED'
+          'Track miss — waiting for next sweep to confirm'
         )
       }
     }
